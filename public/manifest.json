@@ -1,0 +1,25 @@
+{
+  "name": "PO AI Trading Bot - Pocket Options",
+  "short_name": "PO Trading Bot",
+  "description": "AI-powered Pocket Options trading bot with auto-scanning and signal generation",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#080c0a",
+  "theme_color": "#10b981",
+  "categories": ["finance", "utilities"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

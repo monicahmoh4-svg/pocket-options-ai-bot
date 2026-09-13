@@ -12,6 +12,7 @@ import ProfitChart from '@/components/ProfitChart';
 import AIRecommendation from '@/components/AIRecommendation';
 import ConnectionLog from '@/components/ConnectionLog';
 import TradingRulesComponent from '@/components/TradingRules';
+import PWAInstallPrompt from '@/components/PWAInstallPrompt';
 import { useTradingStore } from '@/stores/trading-store';
 import { useMarketStore } from '@/stores/market-store';
 import { PocketOptionsWebSocket } from '@/lib/websocket';
@@ -637,6 +638,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#080c0a] text-white">
+      <PWAInstallPrompt />
       <Navigation
         botActive={botState.isActive}
         isConnected={botState.isConnected}
