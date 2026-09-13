@@ -136,7 +136,7 @@ export default function Navigation({
                     {isDemo ? 'DEMO' : 'REAL'}
                   </span>
                 </div>
-                <button onClick={onToggleDemo} className="relative w-full h-7 bg-gray-700 rounded-full transition-colors" aria-label="Toggle account type">
+                <button onClick={() => onToggleDemo(!isDemo)} className="relative w-full h-7 bg-gray-700 rounded-full transition-colors" aria-label="Toggle account type">
                   <div className={`absolute top-0.5 w-6 h-6 rounded-full transition-all duration-300 ${isDemo ? 'left-0.5 bg-yellow-500' : 'left-[calc(100%-26px)] bg-green-500'}`} />
                   <div className="absolute inset-0 flex items-center justify-between px-2 text-[10px] font-medium">
                     <span className={isDemo ? 'text-white' : 'text-gray-500'}>Demo</span>
@@ -145,7 +145,7 @@ export default function Navigation({
                 </button>
               </div>
             ) : (
-              <button onClick={onToggleDemo} className="w-full flex items-center justify-center p-1.5 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors" title={isDemo ? 'Switch to Real' : 'Switch to Demo'}>
+              <button onClick={() => onToggleDemo(!isDemo)} className="w-full flex items-center justify-center p-1.5 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors" title={isDemo ? 'Switch to Real' : 'Switch to Demo'}>
                 <span className="text-sm">{isDemo ? '🎮' : '💰'}</span>
               </button>
             )}
