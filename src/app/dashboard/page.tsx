@@ -36,20 +36,22 @@ function generateDemoCandles(basePrice: number, count: number): CandleData[] {
   const candles: CandleData[] = [];
   let price = basePrice;
   const now = Date.now();
+  const volatility = basePrice * 0.0015;
   for (let i = 0; i < count; i++) {
-    const volatility = basePrice * 0.0005;
-    const change = (Math.random() - 0.5) * 2 * volatility;
+    const trendBias = Math.sin(i / 30) * volatility * 0.4;
+    const change = (Math.random() - 0.48) * volatility * 2 + trendBias;
     const open = price;
     const close = price + change;
-    const high = Math.max(open, close) + Math.random() * volatility * 0.5;
-    const low = Math.min(open, close) - Math.random() * volatility * 0.5;
+    const wick = Math.abs(change) * 0.3 + Math.random() * volatility * 0.2;
+    const high = Math.max(open, close) + wick;
+    const low = Math.min(open, close) - wick;
     candles.push({
       timestamp: now - (count - i) * 15000,
       open: Math.round(open * 100000) / 100000,
       high: Math.round(high * 100000) / 100000,
       low: Math.round(low * 100000) / 100000,
       close: Math.round(close * 100000) / 100000,
-      volume: Math.floor(Math.random() * 1000) + 100,
+      volume: Math.floor(Math.random() * 800) + 200,
     });
     price = close;
   }
@@ -175,9 +177,14 @@ export default function DashboardPage() {
         ? currentAssets.filter((a) => currentSelectedMarkets.includes(a.id))
         : currentAssets.slice(0, 10);
 
+      let marketsScanned = 0;
+      let signalsFound = 0;
+
       for (const market of marketsToScan) {
         const candles = currentCandleData.get(market.id);
         if (!candles || candles.length < 30) continue;
+
+        marketsScanned++;
 
         const scans = marketScannerRef.current?.scanMarkets(
           [{ id: market.id, name: market.name }],
@@ -189,6 +196,7 @@ export default function DashboardPage() {
 
         const sigs = signalGenRef.current?.generateSignals(candles, market.id, market.name) || [];
         for (const sig of sigs) {
+          signalsFound++;
           addSignal(sig);
           const scan = scans?.find((s) => s.assetId === market.id);
           if (scan && aiAdvisorRef.current) {
@@ -199,7 +207,7 @@ export default function DashboardPage() {
       }
 
       setLastScanTime(Date.now());
-      addConnectionLog(`Scan complete: ${marketsToScan.length} markets analyzed`, 'success');
+      addConnectionLog(`Scan complete: ${marketsScanned} markets analyzed, ${signalsFound} signals found`, 'success');
       clearOldSignals();
     } catch (error) {
       addConnectionLog(`Scan error: ${(error as Error).message}`, 'error');
@@ -282,17 +290,6 @@ export default function DashboardPage() {
   }, [signals, mounted, isDemoMode, executeDemoTrade]);
 
   useEffect(() => {
-    if (!mounted) return;
-
-    runMarketScan();
-    scanIntervalRef.current = setInterval(runMarketScan, 15000);
-
-    return () => {
-      if (scanIntervalRef.current) clearInterval(scanIntervalRef.current);
-    };
-  }, [mounted, runMarketScan]);
-
-  useEffect(() => {
     if (!mounted || !isDemoMode) return;
 
     demoIntervalRef.current = setInterval(() => {
@@ -302,7 +299,7 @@ export default function DashboardPage() {
 
       for (const asset of currentAssets) {
         const currentPrice = currentPriceData.get(asset.id) || getBasePriceForAsset(asset.id);
-        const volatility = currentPrice * (asset.category === 'Crypto' ? 0.002 : 0.0003);
+        const volatility = currentPrice * (asset.category === 'Crypto' ? 0.003 : 0.0015);
         const change = (Math.random() - 0.5) * 2 * volatility;
         const newPrice = Math.round((currentPrice + change) * 100000) / 100000;
         updatePrice(asset.id, newPrice);
@@ -338,9 +335,9 @@ export default function DashboardPage() {
 
     return () => { if (demoIntervalRef.current) clearInterval(demoIntervalRef.current); };
   }, [mounted, isDemoMode, updatePrice, setCandles]);
-
   useEffect(() => {
     if (!mounted) return;
+
     const token = localStorage.getItem('auth_token');
     const isDemoStored = localStorage.getItem('is_demo');
     if (!token) { router.push('/'); return; }
@@ -375,8 +372,17 @@ export default function DashboardPage() {
       addChartData({ time: new Date().toISOString(), balance: 10000, profit: 0 });
       addConnectionLog('Demo mode initialized | Balance: $10,000', 'success');
       addConnectionLog(`Loaded ${demoAssets.length} assets`, 'info');
+
+      setTimeout(() => {
+        runMarketScan();
+        scanIntervalRef.current = setInterval(runMarketScan, 15000);
+      }, 500);
     } else {
       connectWebSocket(token);
+      setTimeout(() => {
+        runMarketScan();
+        scanIntervalRef.current = setInterval(runMarketScan, 15000);
+      }, 1000);
     }
 
     return () => { cleanup(); };
