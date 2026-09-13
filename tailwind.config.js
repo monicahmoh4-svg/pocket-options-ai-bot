@@ -8,34 +8,36 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        'po-dark': '#1a1a2e',
-        'po-darker': '#0f0f1a',
-        'po-card': '#16213e',
-        'po-accent': '#0f3460',
-        'po-green': '#00c853',
-        'po-red': '#ff1744',
-        'po-blue': '#2979ff',
-        'po-yellow': '#ffd600',
-        'po-orange': '#ff9100',
-        'po-purple': '#aa00ff',
-        'po-cyan': '#00e5ff',
+        emerald: {
+          50: '#ecfdf5',
+          100: '#d1fae5',
+          200: '#a7f3d0',
+          300: '#6ee7b7',
+          400: '#34d399',
+          500: '#10b981',
+          600: '#059669',
+          700: '#047857',
+          800: '#065f46',
+          900: '#064e3b',
+          950: '#022c22',
+        },
       },
       animation: {
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'glow': 'glow 2s ease-in-out infinite alternate',
-        'scan': 'scan 3s linear infinite',
+        'glow-green': 'glowGreen 2s ease-in-out infinite alternate',
         'fade-in': 'fadeIn 0.5s ease-in',
         'slide-up': 'slideUp 0.3s ease-out',
         'slide-in-right': 'slideInRight 0.3s ease-out',
       },
       keyframes: {
         glow: {
-          '0%': { boxShadow: '0 0 5px rgba(0, 200, 83, 0.2)' },
-          '100%': { boxShadow: '0 0 20px rgba(0, 200, 83, 0.4)' },
+          '0%': { boxShadow: '0 0 5px rgba(16, 185, 129, 0.2)' },
+          '100%': { boxShadow: '0 0 20px rgba(16, 185, 129, 0.4)' },
         },
-        scan: {
-          '0%': { transform: 'translateX(-100%)' },
-          '100%': { transform: 'translateX(100%)' },
+        glowGreen: {
+          '0%': { boxShadow: '0 0 10px rgba(16, 185, 129, 0.3)' },
+          '100%': { boxShadow: '0 0 30px rgba(16, 185, 129, 0.6)' },
         },
         fadeIn: {
           '0%': { opacity: '0' },

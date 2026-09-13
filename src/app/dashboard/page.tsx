@@ -254,19 +254,15 @@ export default function DashboardPage() {
     }, Math.min(signal.expiry * 1000, 15000));
   }, [addTrade, addConnectionLog, updateTrade, setBalance, addChartData]);
 
-  useEffect(() => {
-    if (!mounted) return;
-
-    const currentSignals = signals;
-    const currentBotActive = botActiveRef.current;
+  const processAutoTrade = useCallback(() => {
+    if (!botActiveRef.current) return;
     const currentActiveTrades = activeTradesRef.current;
     const currentRules = rulesRef.current;
     const currentBalance = balanceRef.current;
 
-    if (!currentBotActive) return;
     if (currentActiveTrades.length >= currentRules.maxConcurrentTrades) return;
 
-    const highConfidenceSignals = currentSignals.filter(
+    const highConfidenceSignals = signalsRef.current.filter(
       (s) =>
         s.strength >= currentRules.minSignalStrength &&
         s.confidence >= currentRules.minConfidence &&
@@ -284,10 +280,18 @@ export default function DashboardPage() {
     const stake = Math.min(currentRules.stakeAmount, currentRules.maxStake, currentBalance * 0.02);
     if (stake < currentRules.minStake) return;
 
-    if (isDemoMode) {
-      executeDemoTrade(signal, stake);
-    }
-  }, [signals, mounted, isDemoMode, executeDemoTrade]);
+    executeDemoTrade(signal, stake);
+  }, [executeDemoTrade]);
+
+  useEffect(() => {
+    if (!mounted) return;
+    processAutoTrade();
+  }, [signals, mounted, processAutoTrade]);
+
+  useEffect(() => {
+    if (!mounted) return;
+    processAutoTrade();
+  }, [botState.isActive, mounted, processAutoTrade]);
 
   useEffect(() => {
     if (!mounted || !isDemoMode) return;
@@ -335,6 +339,7 @@ export default function DashboardPage() {
 
     return () => { if (demoIntervalRef.current) clearInterval(demoIntervalRef.current); };
   }, [mounted, isDemoMode, updatePrice, setCandles]);
+
   useEffect(() => {
     if (!mounted) return;
 
@@ -394,22 +399,9 @@ export default function DashboardPage() {
     wsRef.current = ws;
 
     ws.on(WS_EVENTS.CONNECT, () => { addConnectionLog('WebSocket connecting...', 'info'); });
-
-    ws.on(WS_EVENTS.AUTH_SUCCESS, () => {
-      setConnected(true);
-      addConnectionLog('Authenticated successfully', 'success');
-    });
-
-    ws.on(WS_EVENTS.AUTH_FAILED, (data: any) => {
-      setConnected(false);
-      addConnectionLog(`Auth failed: ${data?.message || 'Unknown error'}`, 'error');
-    });
-
-    ws.on(WS_EVENTS.DISCONNECT, (data: any) => {
-      setConnected(false);
-      addConnectionLog(`Disconnected: ${data?.reason || 'Unknown'}`, 'warning');
-    });
-
+    ws.on(WS_EVENTS.AUTH_SUCCESS, () => { setConnected(true); addConnectionLog('Authenticated successfully', 'success'); });
+    ws.on(WS_EVENTS.AUTH_FAILED, (data: any) => { setConnected(false); addConnectionLog(`Auth failed: ${data?.message || 'Unknown error'}`, 'error'); });
+    ws.on(WS_EVENTS.DISCONNECT, (data: any) => { setConnected(false); addConnectionLog(`Disconnected: ${data?.reason || 'Unknown'}`, 'warning'); });
     ws.on(WS_EVENTS.PRICE_UPDATE, (data: any) => {
       const payload = Array.isArray(data) ? data : [data];
       for (const item of payload) {
@@ -418,16 +410,8 @@ export default function DashboardPage() {
         if (assetId && price > 0) { updatePrice(assetId, price); }
       }
     });
-
-    ws.on(WS_EVENTS.BALANCE_UPDATE, (data: any) => {
-      const balance = Number(data.balance || data.amount || 0);
-      if (balance > 0) { setBalance(balance); }
-    });
-
-    ws.on(WS_EVENTS.TRADE_OPENED, (data: any) => {
-      addConnectionLog(`Trade opened: ${data?.asset || ''} ${data?.direction || ''}`, 'success');
-    });
-
+    ws.on(WS_EVENTS.BALANCE_UPDATE, (data: any) => { const balance = Number(data.balance || data.amount || 0); if (balance > 0) { setBalance(balance); } });
+    ws.on(WS_EVENTS.TRADE_OPENED, (data: any) => { addConnectionLog(`Trade opened: ${data?.asset || ''} ${data?.direction || ''}`, 'success'); });
     ws.on(WS_EVENTS.TRADE_RESULT, (data: any) => {
       const tradeId = data.tradeId || data.trade_id || data.id;
       const profit = Number(data.profit || 0);
@@ -439,14 +423,11 @@ export default function DashboardPage() {
       setEquity(equity);
       addChartData({ time: new Date().toISOString(), balance: equity, profit });
     });
-
     ws.on(WS_EVENTS.MARKET_LIST, (data: any) => {
       const marketList: MarketAsset[] = Array.isArray(data) ? data : (data.markets || data.assets || []);
       if (marketList.length > 0) { setAssets(marketList); addConnectionLog(`Loaded ${marketList.length} markets`, 'info'); }
     });
-
     ws.on(WS_EVENTS.ERROR, (data: any) => { addConnectionLog(`Error: ${data?.message || 'Unknown error'}`, 'error'); });
-
     ws.connect();
   }, [isDemoMode, addConnectionLog, setConnected, setBalance, setEquity, setAssets, updatePrice, updateTrade, addChartData]);
 
@@ -586,9 +567,9 @@ export default function DashboardPage() {
 
   if (!mounted) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+      <div className="min-h-screen bg-[#080c0a] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-gray-700 border-t-blue-500 rounded-full animate-spin" />
+          <div className="w-12 h-12 border-4 border-gray-800 border-t-emerald-500 rounded-full animate-spin" />
           <p className="text-gray-400 text-sm">Loading dashboard...</p>
         </div>
       </div>
@@ -596,7 +577,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className="min-h-screen bg-[#080c0a] text-white">
       <Navigation
         botActive={botState.isActive}
         isConnected={botState.isConnected}
@@ -606,9 +587,9 @@ export default function DashboardPage() {
         onTabChange={(tab) => setActiveTab(tab as TabKey)}
       />
 
-      <div className="lg:ml-16 xl:ml-60 min-h-screen flex flex-col">
-        <div className="sticky top-0 z-30 bg-gray-950/90 backdrop-blur-xl border-b border-gray-800">
-          <div className="px-3 sm:px-4 lg:px-6 py-2">
+      <div className="lg:ml-16 xl:ml-60 min-h-screen">
+        <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 max-w-7xl mx-auto">
+          <div className="mb-4 sm:mb-6">
             <BalanceDisplay
               balance={botState.balance}
               todayProfit={botState.todayProfit}
@@ -618,41 +599,36 @@ export default function DashboardPage() {
               isConnected={botState.isConnected}
             />
           </div>
-        </div>
 
-        <div className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 flex-1 overflow-y-auto">
-          <div className="flex items-center gap-1 mb-3 sm:mb-4 overflow-x-auto pb-2 scrollbar-thin">
+          <div className="flex items-center gap-2 mb-4 sm:mb-6 overflow-x-auto pb-2 scrollbar-thin">
             {TABS.map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-medium whitespace-nowrap transition-all ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-200 ${
                   activeTab === tab.key
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-                    : 'bg-gray-800/50 text-gray-400 hover:bg-gray-800 hover:text-white'
+                    ? 'bg-gradient-to-r from-emerald-600/20 to-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-lg shadow-emerald-500/10'
+                    : 'bg-gray-900/50 text-gray-400 hover:bg-gray-800/50 hover:text-white border border-transparent'
                 }`}
               >
                 <span>{tab.icon}</span>
                 <span>{tab.label}</span>
                 {tab.key === 'signals' && signals.length > 0 && (
-                  <span className="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-[9px] sm:text-[10px] font-bold bg-purple-500 text-white rounded-full">
+                  <span className="w-5 h-5 flex items-center justify-center text-[10px] font-bold bg-emerald-500 text-white rounded-full">
                     {signals.length > 9 ? '9+' : signals.length}
                   </span>
                 )}
                 {tab.key === 'trades' && activeTrades.length > 0 && (
-                  <span className="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-[9px] sm:text-[10px] font-bold bg-green-500 text-white rounded-full animate-pulse">
+                  <span className="w-5 h-5 flex items-center justify-center text-[10px] font-bold bg-emerald-500 text-white rounded-full animate-pulse">
                     {activeTrades.length}
                   </span>
-                )}
-                {tab.key === 'log' && (
-                  <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
                 )}
               </button>
             ))}
           </div>
 
           {activeTab === 'overview' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               <div className="space-y-4 sm:space-y-6">
                 <BotControls
                   botActive={botState.isActive}
@@ -686,7 +662,7 @@ export default function DashboardPage() {
                 <SignalPanel signals={signals} onExecuteTrade={handleExecuteTrade} isExecuting={isExecutingTrade} />
               </div>
               <div>
-                <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+                <div className="card-dark overflow-hidden">
                   <AIRecommendation recommendations={aiRecommendations} />
                 </div>
               </div>
@@ -714,32 +690,32 @@ export default function DashboardPage() {
           )}
 
           {activeTab === 'log' && (
-            <div className="h-[50vh] sm:h-[600px]">
+            <div className="h-[60vh] sm:h-[700px]">
               <ConnectionLog logs={connectionLog} onClear={handleClearLogs} />
             </div>
           )}
-        </div>
 
-        <div className="px-3 sm:px-4 lg:px-6 pb-4 sm:pb-6">
-          <div className={`bg-gray-900 rounded-xl border border-gray-800 overflow-hidden transition-all duration-300 ${logExpanded ? 'h-64 sm:h-96' : 'h-12 sm:h-14'}`}>
-            <button
-              onClick={() => setLogExpanded(!logExpanded)}
-              className="w-full flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 hover:bg-gray-800/50 transition-colors"
-            >
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-xs sm:text-sm font-medium text-gray-300">Connection Log</span>
-                <span className="text-[10px] sm:text-xs text-gray-600 font-mono">({connectionLog.length})</span>
-              </div>
-              <svg className={`w-4 h-4 sm:w-5 sm:h-5 text-gray-400 transition-transform ${logExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            {logExpanded && (
-              <div className="h-[calc(100%-3rem)]">
-                <ConnectionLog logs={connectionLog} onClear={handleClearLogs} />
-              </div>
-            )}
+          <div className="mt-4 sm:mt-6">
+            <div className={`card-dark overflow-hidden transition-all duration-300 ${logExpanded ? 'h-64 sm:h-96' : 'h-14'}`}>
+              <button
+                onClick={() => setLogExpanded(!logExpanded)}
+                className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-800/30 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-sm font-medium text-gray-300">Connection Log</span>
+                  <span className="text-xs text-gray-600 font-mono">({connectionLog.length})</span>
+                </div>
+                <svg className={`w-5 h-5 text-gray-400 transition-transform ${logExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {logExpanded && (
+                <div className="h-[calc(100%-3.5rem)]">
+                  <ConnectionLog logs={connectionLog} onClear={handleClearLogs} />
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
