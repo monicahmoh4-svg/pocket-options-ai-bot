@@ -27,14 +27,10 @@ export default function LoginPage() {
       // Simulate auth delay
       await new Promise((resolve) => setTimeout(resolve, 1200));
 
-      const authData = {
-        email,
-        token,
-        isDemo,
-        loggedInAt: Date.now(),
-      };
-
-      localStorage.setItem('po-bot-auth', JSON.stringify(authData));
+      const authToken = token || `demo_token_${Date.now()}`;
+      localStorage.setItem('auth_token', authToken);
+      localStorage.setItem('is_demo', String(isDemo));
+      localStorage.setItem('po-bot-email', email);
       router.push('/dashboard');
     } catch {
       setError('Authentication failed. Please check your credentials.');

@@ -151,7 +151,7 @@ export default function DashboardPage() {
     const isDemoStored = localStorage.getItem('is_demo');
 
     if (!token) {
-      router.push('/login');
+      router.push('/');
       return;
     }
 
@@ -690,7 +690,7 @@ export default function DashboardPage() {
   );
 
   const handleLogin = useCallback(() => {
-    router.push('/login');
+    router.push('/');
   }, [router]);
 
   const handleToggleBot = useCallback(() => {
@@ -796,7 +796,7 @@ export default function DashboardPage() {
       if (token) {
         connectWebSocket(token, isDemoMode);
       } else {
-        router.push('/login');
+      router.push('/');
       }
     }
   }, [isDemoMode, addConnectionLog, initializeDemoMode, connectWebSocket, router]);
