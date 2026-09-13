@@ -8,8 +8,8 @@ export const DEFAULT_TRADING_RULES: TradingRules = {
   stopLoss: 100,
   maxConcurrentTrades: 3,
   tradingExpiry: 60,
-  minSignalStrength: 70,
-  minConfidence: 65,
+  minSignalStrength: 45,
+  minConfidence: 40,
   allowedMarkets: [],
   tradingSession: {
     start: '08:00',

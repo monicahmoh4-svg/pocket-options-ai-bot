@@ -45,7 +45,7 @@ export class SignalGenerator {
 
   private readonly MIN_INDICATOR_AGREEMENT = 0.55;
 
-  constructor(minSignalStrength = 70, minConfidence = 65) {
+  constructor(minSignalStrength = 45, minConfidence = 40) {
     this.minSignalStrength = minSignalStrength;
     this.minConfidence = minConfidence;
   }

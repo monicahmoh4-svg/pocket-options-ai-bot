@@ -133,6 +133,7 @@ export default function DashboardPage() {
   const botActiveRef = useRef(false);
   const rulesRef = useRef<TradingRules>(rules);
   const balanceRef = useRef(botState.balance);
+  const autoTradeIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -147,6 +148,7 @@ export default function DashboardPage() {
     if (wsRef.current) { wsRef.current.disconnect(); wsRef.current = null; }
     if (scanIntervalRef.current) { clearInterval(scanIntervalRef.current); scanIntervalRef.current = null; }
     if (demoIntervalRef.current) { clearInterval(demoIntervalRef.current); demoIntervalRef.current = null; }
+    if (autoTradeIntervalRef.current) { clearInterval(autoTradeIntervalRef.current); autoTradeIntervalRef.current = null; }
   }, []);
 
   const getBasePriceForAsset = (assetId: string): number => {
@@ -173,9 +175,14 @@ export default function DashboardPage() {
       const currentSelectedMarkets = useMarketStore.getState().selectedMarkets;
       const currentTradeHistory = useTradingStore.getState().tradeHistory;
 
+      if (currentAssets.length === 0) {
+        addConnectionLog('No markets loaded yet, waiting...', 'warning');
+        return;
+      }
+
       const marketsToScan = currentSelectedMarkets.length > 0
         ? currentAssets.filter((a) => currentSelectedMarkets.includes(a.id))
-        : currentAssets.slice(0, 10);
+        : currentAssets;
 
       let marketsScanned = 0;
       let signalsFound = 0;
@@ -207,7 +214,7 @@ export default function DashboardPage() {
       }
 
       setLastScanTime(Date.now());
-      addConnectionLog(`Scan complete: ${marketsScanned} markets analyzed, ${signalsFound} signals found`, 'success');
+      addConnectionLog(`Scan complete: ${marketsScanned} markets scanned, ${signalsFound} signals found`, 'success');
       clearOldSignals();
     } catch (error) {
       addConnectionLog(`Scan error: ${(error as Error).message}`, 'error');
@@ -266,7 +273,7 @@ export default function DashboardPage() {
       (s) =>
         s.strength >= currentRules.minSignalStrength &&
         s.confidence >= currentRules.minConfidence &&
-        s.timestamp > Date.now() - 120000
+        s.timestamp > Date.now() - 300000
     );
 
     if (highConfidenceSignals.length === 0) return;
@@ -280,8 +287,30 @@ export default function DashboardPage() {
     const stake = Math.min(currentRules.stakeAmount, currentRules.maxStake, currentBalance * 0.02);
     if (stake < currentRules.minStake) return;
 
-    executeDemoTrade(signal, stake);
-  }, [executeDemoTrade]);
+    const isDemo = useTradingStore.getState().botState.isDemo;
+    if (isDemo) {
+      executeDemoTrade(signal, stake);
+    } else if (wsRef.current) {
+      const entryPrice = useMarketStore.getState().priceData.get(signal.assetId) || 0;
+      const trade: Trade = {
+        id: uuidv4(),
+        assetId: signal.assetId,
+        assetName: signal.assetName,
+        direction: signal.direction,
+        amount: stake,
+        entryPrice,
+        expiry: signal.expiry,
+        openTime: Date.now(),
+        status: 'OPEN',
+      };
+      addTrade(trade);
+      addConnectionLog(`[LIVE] ${signal.direction} ${signal.assetName} | $${stake} @ ${entryPrice}`, 'info');
+      wsRef.current.placeTrade(signal.direction, stake, signal.assetId, signal.expiry).catch((err: Error) => {
+        addConnectionLog(`Trade failed: ${err.message}`, 'error');
+        updateTrade(trade.id, { status: 'CANCELLED', closeTime: Date.now() });
+      });
+    }
+  }, [executeDemoTrade, addTrade, addConnectionLog, updateTrade]);
 
   useEffect(() => {
     if (!mounted) return;
@@ -292,6 +321,15 @@ export default function DashboardPage() {
     if (!mounted) return;
     processAutoTrade();
   }, [botState.isActive, mounted, processAutoTrade]);
+
+  useEffect(() => {
+    if (!mounted || !botState.isActive) {
+      if (autoTradeIntervalRef.current) { clearInterval(autoTradeIntervalRef.current); autoTradeIntervalRef.current = null; }
+      return;
+    }
+    autoTradeIntervalRef.current = setInterval(processAutoTrade, 5000);
+    return () => { if (autoTradeIntervalRef.current) { clearInterval(autoTradeIntervalRef.current); autoTradeIntervalRef.current = null; } };
+  }, [mounted, botState.isActive, processAutoTrade]);
 
   useEffect(() => {
     if (!mounted || !isDemoMode) return;
@@ -363,11 +401,11 @@ export default function DashboardPage() {
     if (demoMode) {
       const demoAssets = generateDemoAssets();
       setAssets(demoAssets);
-      setSelectedMarkets(demoAssets.slice(0, 8).map((a) => a.id));
+      setSelectedMarkets(demoAssets.map((a) => a.id));
       setBalance(10000);
       setConnected(true);
 
-      for (const asset of demoAssets.slice(0, 10)) {
+      for (const asset of demoAssets) {
         const basePrice = getBasePriceForAsset(asset.id);
         const candles = generateDemoCandles(basePrice, 100);
         setCandles(asset.id, candles);
@@ -376,18 +414,22 @@ export default function DashboardPage() {
 
       addChartData({ time: new Date().toISOString(), balance: 10000, profit: 0 });
       addConnectionLog('Demo mode initialized | Balance: $10,000', 'success');
-      addConnectionLog(`Loaded ${demoAssets.length} assets`, 'info');
+      addConnectionLog(`Loaded ${demoAssets.length} assets | Selected ${demoAssets.length} for scanning`, 'info');
 
       setTimeout(() => {
+        setBotActive(true);
+        addConnectionLog('Bot auto-activated for demo trading', 'success');
         runMarketScan();
         scanIntervalRef.current = setInterval(runMarketScan, 15000);
-      }, 500);
+      }, 2000);
     } else {
       connectWebSocket(token);
       setTimeout(() => {
+        setBotActive(true);
+        addConnectionLog('Bot auto-activated for live trading', 'success');
         runMarketScan();
         scanIntervalRef.current = setInterval(runMarketScan, 15000);
-      }, 1000);
+      }, 2000);
     }
 
     return () => { cleanup(); };
@@ -509,10 +551,10 @@ export default function DashboardPage() {
     if (isDemoMode) {
       const demoAssets = generateDemoAssets();
       setAssets(demoAssets);
-      setSelectedMarkets(demoAssets.slice(0, 8).map((a) => a.id));
+      setSelectedMarkets(demoAssets.map((a) => a.id));
       setBalance(10000);
       setConnected(true);
-      for (const asset of demoAssets.slice(0, 10)) {
+      for (const asset of demoAssets) {
         const basePrice = getBasePriceForAsset(asset.id);
         const candles = generateDemoCandles(basePrice, 100);
         setCandles(asset.id, candles);
@@ -520,6 +562,11 @@ export default function DashboardPage() {
       }
       addChartData({ time: new Date().toISOString(), balance: 10000, profit: 0 });
       addConnectionLog('Demo mode reinitialized | Balance: $10,000', 'success');
+      setTimeout(() => {
+        setBotActive(true);
+        runMarketScan();
+        scanIntervalRef.current = setInterval(runMarketScan, 15000);
+      }, 2000);
     } else {
       const token = authTokenRef.current;
       if (token) { connectWebSocket(token); } else { router.push('/'); }
@@ -536,10 +583,10 @@ export default function DashboardPage() {
       if (newIsDemo) {
         const demoAssets = generateDemoAssets();
         setAssets(demoAssets);
-        setSelectedMarkets(demoAssets.slice(0, 8).map((a) => a.id));
+        setSelectedMarkets(demoAssets.map((a) => a.id));
         setBalance(10000);
         setConnected(true);
-        for (const asset of demoAssets.slice(0, 10)) {
+        for (const asset of demoAssets) {
           const basePrice = getBasePriceForAsset(asset.id);
           const candles = generateDemoCandles(basePrice, 100);
           setCandles(asset.id, candles);
@@ -547,9 +594,21 @@ export default function DashboardPage() {
         }
         addChartData({ time: new Date().toISOString(), balance: 10000, profit: 0 });
         addConnectionLog('Demo mode initialized | Balance: $10,000', 'success');
+        setTimeout(() => {
+          setBotActive(true);
+          addConnectionLog('Bot auto-activated', 'success');
+          runMarketScan();
+          scanIntervalRef.current = setInterval(runMarketScan, 15000);
+        }, 2000);
       } else {
         const token = authTokenRef.current;
         if (token) { connectWebSocket(token); }
+        setTimeout(() => {
+          setBotActive(true);
+          addConnectionLog('Bot auto-activated', 'success');
+          runMarketScan();
+          scanIntervalRef.current = setInterval(runMarketScan, 15000);
+        }, 2000);
       }
     },
     [setIsDemo, addConnectionLog, cleanup, setAssets, setSelectedMarkets, setBalance, setConnected, setCandles, updatePrice, addChartData, connectWebSocket]
