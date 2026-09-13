@@ -13,11 +13,11 @@ interface ConnectionLogProps {
   onClear: () => void
 }
 
-const TYPE_CONFIG: Record<string, { color: string; bg: string; icon: string }> = {
-  info: { color: 'text-blue-400', bg: 'bg-blue-500/10', icon: '●' },
-  success: { color: 'text-emerald-400', bg: 'bg-emerald-500/10', icon: '✓' },
-  error: { color: 'text-red-400', bg: 'bg-red-500/10', icon: '✕' },
-  warning: { color: 'text-yellow-400', bg: 'bg-yellow-500/10', icon: '▲' },
+const TYPE_CONFIG: Record<string, { color: string; bg: string; icon: string; border: string }> = {
+  info: { color: 'text-blue-400', bg: 'bg-blue-500/10', icon: '●', border: 'border-blue-500/50' },
+  success: { color: 'text-emerald-400', bg: 'bg-emerald-500/10', icon: '✓', border: 'border-emerald-500/50' },
+  error: { color: 'text-red-400', bg: 'bg-red-500/10', icon: '✕', border: 'border-red-500/50' },
+  warning: { color: 'text-yellow-400', bg: 'bg-yellow-500/10', icon: '▲', border: 'border-yellow-500/50' },
 }
 
 const FILTER_OPTIONS = ['All', 'Info', 'Success', 'Error', 'Warning'] as const
