@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Download, Smartphone } from 'lucide-react';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -73,7 +72,9 @@ export default function PWAInstallPrompt() {
       <div className="glass-card rounded-2xl border border-emerald-500/30 p-4 shadow-2xl shadow-emerald-500/10">
         <div className="flex items-start gap-3">
           <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-emerald-500/20">
-            <Smartphone className="h-6 w-6 text-emerald-400" />
+            <svg className="h-6 w-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="text-sm font-semibold text-white">Install PO Trading Bot</h3>
@@ -85,7 +86,9 @@ export default function PWAInstallPrompt() {
                 onClick={handleInstall}
                 className="flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-medium text-white transition-all hover:bg-emerald-400 active:scale-95"
               >
-                <Download className="h-3.5 w-3.5" />
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
                 Install
               </button>
               <button
@@ -100,7 +103,9 @@ export default function PWAInstallPrompt() {
             onClick={handleDismiss}
             className="flex-shrink-0 rounded-lg p-1 text-gray-500 transition-colors hover:text-white"
           >
-            <X className="h-4 w-4" />
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
       </div>
