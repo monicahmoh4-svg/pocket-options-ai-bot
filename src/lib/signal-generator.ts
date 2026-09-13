@@ -350,7 +350,7 @@ export class SignalGenerator {
 
   private recordSignal(signal: Signal): void {
     this.signalHistory.push({
-      signalId: signal.signalId,
+      signalId: signal.id,
       assetId: signal.assetId,
       direction: signal.direction,
       predicted: true,
