@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const POCKET_OPTIONS_API = process.env.POCKET_OPTIONS_API_URL || 'https://pocketoption.com';
-const POCKET_OPTIONS_SID = process.env.POCKET_OPTIONS_SID || '';
 
 interface SessionData {
   token: string;
@@ -27,11 +26,7 @@ function generateSessionToken(): string {
 
 async function validateToken(token: string, isDemo: boolean): Promise<boolean> {
   try {
-    const wsUrl = isDemo
-      ? 'wss://demo-api-v2.pocketoption.com/socket.io/?EIO=3&transport=websocket'
-      : 'wss://api-v2.pocketoption.com/socket.io/?EIO=3&transport=websocket';
-
-    const response = await fetch(`${POCKET_OPTIONS小心翼}/api/auth/validate`, {
+    const response = await fetch(`${POCKET_OPTIONS_API}/api/auth/validate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

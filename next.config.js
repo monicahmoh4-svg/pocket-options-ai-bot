@@ -1,9 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  experimental: {
-    serverActions: true,
-  },
   webpack: (config) => {
     config.externals.push({
       bufferutil: 'bufferutil',
