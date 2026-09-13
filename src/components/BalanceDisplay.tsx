@@ -110,96 +110,66 @@ export default function BalanceDisplay({
       : 'bg-gray-500/10'
 
   return (
-    <div className="bg-gray-900 rounded-2xl p-6 shadow-xl border border-gray-800">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-semibold text-gray-300">Account Overview</h2>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <div
-              className={`w-2 h-2 rounded-full ${
-                isConnected ? 'bg-green-500' : 'bg-red-500'
-              }`}
-            />
-            <span className="text-xs text-gray-500">
-              {isConnected ? 'Live' : 'Offline'}
-            </span>
+    <div className="bg-gray-900 rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-xl border border-gray-800">
+      <div className="flex items-center justify-between mb-3 sm:mb-6">
+        <h2 className="text-sm sm:text-lg font-semibold text-gray-300">Account Overview</h2>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5">
+            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+            <span className="text-[10px] sm:text-xs text-gray-500">{isConnected ? 'Live' : 'Offline'}</span>
           </div>
-          <span
-            className={`text-xs font-bold px-3 py-1 rounded-full ${
-              isDemo
-                ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/30'
-                : 'bg-green-500/20 text-green-500 border border-green-500/30'
-            }`}
-          >
+          <span className={`text-[10px] sm:text-xs font-bold px-2 sm:px-3 py-0.5 sm:py-1 rounded-full ${isDemo ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/30' : 'bg-green-500/20 text-green-500 border border-green-500/30'}`}>
             {isDemo ? 'DEMO' : 'REAL'}
           </span>
         </div>
       </div>
 
-      {/* Main Balance */}
-      <div className="mb-6">
-        <p className="text-sm text-gray-500 mb-1">Total Balance</p>
-        <div className="text-4xl font-bold text-white">
+      <div className="mb-3 sm:mb-6">
+        <p className="text-xs sm:text-sm text-gray-500 mb-0.5 sm:mb-1">Total Balance</p>
+        <div className="text-2xl sm:text-4xl font-bold text-white">
           <AnimatedNumber value={balance} prefix="$" />
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-3 gap-4">
-        {/* Today's P&L */}
-        <div className={`rounded-xl p-4 ${profitBg}`}>
-          <p className="text-xs text-gray-500 mb-2">Today&apos;s P&L</p>
-          <div className={`text-xl font-bold ${profitColor}`}>
+      <div className="grid grid-cols-3 gap-2 sm:gap-4">
+        <div className={`rounded-lg sm:rounded-xl p-2 sm:p-4 ${profitBg}`}>
+          <p className="text-[10px] sm:text-xs text-gray-500 mb-1 sm:mb-2">Today&apos;s P&L</p>
+          <div className={`text-sm sm:text-xl font-bold ${profitColor}`}>
             <AnimatePresence mode="wait">
               <motion.span
                 key={todayProfit}
-                initial={{
-                  opacity: 0,
-                  y: profitDirection === 'up' ? 10 : profitDirection === 'down' ? -10 : 0,
-                }}
+                initial={{ opacity: 0, y: profitDirection === 'up' ? 10 : profitDirection === 'down' ? -10 : 0 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{
-                  opacity: 0,
-                  y: profitDirection === 'up' ? -10 : profitDirection === 'down' ? 10 : 0,
-                }}
+                exit={{ opacity: 0, y: profitDirection === 'up' ? -10 : profitDirection === 'down' ? 10 : 0 }}
                 transition={{ duration: 0.3 }}
               >
-                <AnimatedNumber
-                  value={todayProfit}
-                  prefix={todayProfit >= 0 ? '+$' : '-$'}
-                />
+                <AnimatedNumber value={todayProfit} prefix={todayProfit >= 0 ? '+$' : '-$'} />
               </motion.span>
             </AnimatePresence>
           </div>
         </div>
 
-        {/* Total Trades */}
-        <div className="rounded-xl p-4 bg-gray-800/50">
-          <p className="text-xs text-gray-500 mb-2">Total Trades</p>
-          <div className="text-xl font-bold text-blue-400">
+        <div className="rounded-lg sm:rounded-xl p-2 sm:p-4 bg-gray-800/50">
+          <p className="text-[10px] sm:text-xs text-gray-500 mb-1 sm:mb-2">Total Trades</p>
+          <div className="text-sm sm:text-xl font-bold text-blue-400">
             <AnimatedNumber value={totalTrades} />
           </div>
         </div>
 
-        {/* Win Rate */}
-        <div className="rounded-xl p-4 bg-gray-800/50">
-          <p className="text-xs text-gray-500 mb-2">Win Rate</p>
-          <div className="text-xl font-bold text-purple-400">
+        <div className="rounded-lg sm:rounded-xl p-2 sm:p-4 bg-gray-800/50">
+          <p className="text-[10px] sm:text-xs text-gray-500 mb-1 sm:mb-2">Win Rate</p>
+          <div className="text-sm sm:text-xl font-bold text-purple-400">
             <AnimatedNumber value={winRate} suffix="%" />
           </div>
         </div>
       </div>
 
-      {/* Win Rate Bar */}
-      <div className="mt-6">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs text-gray-500">Win/Loss Ratio</span>
-          <span className="text-xs text-gray-400">
-            {winRate.toFixed(1)}% Win Rate
-          </span>
+      <div className="mt-3 sm:mt-6">
+        <div className="flex items-center justify-between mb-1 sm:mb-2">
+          <span className="text-[10px] sm:text-xs text-gray-500">Win/Loss Ratio</span>
+          <span className="text-[10px] sm:text-xs text-gray-400">{winRate.toFixed(1)}%</span>
         </div>
-        <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+        <div className="h-1.5 sm:h-2 bg-gray-800 rounded-full overflow-hidden">
           <motion.div
             className="h-full rounded-full bg-gradient-to-r from-green-500 to-emerald-400"
             initial={{ width: 0 }}
@@ -207,13 +177,9 @@ export default function BalanceDisplay({
             transition={{ duration: 1, ease: 'easeOut' }}
           />
         </div>
-        <div className="flex justify-between mt-1">
-          <span className="text-xs text-green-500">
-            {Math.round((winRate / 100) * totalTrades)} Wins
-          </span>
-          <span className="text-xs text-red-500">
-            {totalTrades - Math.round((winRate / 100) * totalTrades)} Losses
-          </span>
+        <div className="flex justify-between mt-0.5 sm:mt-1">
+          <span className="text-[10px] sm:text-xs text-green-500">{Math.round((winRate / 100) * totalTrades)} W</span>
+          <span className="text-[10px] sm:text-xs text-red-500">{totalTrades - Math.round((winRate / 100) * totalTrades)} L</span>
         </div>
       </div>
     </div>

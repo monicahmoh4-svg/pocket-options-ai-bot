@@ -855,11 +855,13 @@ export default function DashboardPage() {
         isConnected={botState.isConnected}
         isDemo={isDemoMode}
         onToggleDemo={handleToggleDemo}
+        activeTab={activeTab}
+        onTabChange={(tab) => setActiveTab(tab as TabKey)}
       />
 
-      <div className="lg:ml-20 xl:ml-64 min-h-screen flex flex-col">
-        <div className="sticky top-0 z-30 bg-gray-950/80 backdrop-blur-xl border-b border-gray-800">
-          <div className="px-4 lg:px-6 py-3">
+      <div className="lg:ml-16 xl:ml-60 min-h-screen flex flex-col">
+        <div className="sticky top-0 z-30 bg-gray-950/90 backdrop-blur-xl border-b border-gray-800">
+          <div className="px-4 lg:px-6 py-2">
             <BalanceDisplay
               balance={botState.balance}
               todayProfit={botState.todayProfit}
@@ -871,13 +873,13 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="px-4 lg:px-6 py-4">
-          <div className="flex items-center gap-1 mb-4 overflow-x-auto pb-2 scrollbar-thin">
+        <div className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 flex-1 overflow-y-auto">
+          <div className="flex items-center gap-1 mb-3 sm:mb-4 overflow-x-auto pb-2 scrollbar-thin">
             {TABS.map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
+                className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-medium whitespace-nowrap transition-all ${
                   activeTab === tab.key
                     ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
                     : 'bg-gray-800/50 text-gray-400 hover:bg-gray-800 hover:text-white'
@@ -886,12 +888,12 @@ export default function DashboardPage() {
                 <span>{tab.icon}</span>
                 <span>{tab.label}</span>
                 {tab.key === 'signals' && signals.length > 0 && (
-                  <span className="w-5 h-5 flex items-center justify-center text-[10px] font-bold bg-purple-500 text-white rounded-full">
+                  <span className="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-[9px] sm:text-[10px] font-bold bg-purple-500 text-white rounded-full">
                     {signals.length > 9 ? '9+' : signals.length}
                   </span>
                 )}
                 {tab.key === 'trades' && activeTrades.length > 0 && (
-                  <span className="w-5 h-5 flex items-center justify-center text-[10px] font-bold bg-green-500 text-white rounded-full animate-pulse">
+                  <span className="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-[9px] sm:text-[10px] font-bold bg-green-500 text-white rounded-full animate-pulse">
                     {activeTrades.length}
                   </span>
                 )}
@@ -903,8 +905,8 @@ export default function DashboardPage() {
           </div>
 
           {activeTab === 'overview' && (
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+              <div className="space-y-4 sm:space-y-6">
                 <BotControls
                   botActive={botState.isActive}
                   isConnected={botState.isConnected}
@@ -925,7 +927,7 @@ export default function DashboardPage() {
                 />
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 <MarketScanner
                   scans={marketScans}
                   isScanning={isScanning}
@@ -947,8 +949,8 @@ export default function DashboardPage() {
           )}
 
           {activeTab === 'signals' && (
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-              <div className="xl:col-span-2">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+              <div className="lg:col-span-2">
                 <SignalPanel
                   signals={signals}
                   onExecuteTrade={handleExecuteTrade}
@@ -977,7 +979,7 @@ export default function DashboardPage() {
           )}
 
           {activeTab === 'trades' && (
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               <TradeHistory
                 tradeHistory={tradeHistory}
                 activeTrades={activeTrades}
@@ -996,45 +998,29 @@ export default function DashboardPage() {
           )}
 
           {activeTab === 'log' && (
-            <div className="h-[600px]">
+            <div className="h-[50vh] sm:h-[600px]">
               <ConnectionLog logs={connectionLog} onClear={handleClearLogs} />
             </div>
           )}
         </div>
 
-        <div className="px-4 lg:px-6 pb-6">
+        <div className="px-3 sm:px-4 lg:px-6 pb-4 sm:pb-6">
           <div
             className={`bg-gray-900 rounded-xl border border-gray-800 overflow-hidden transition-all duration-300 ${
-              logExpanded ? 'h-96' : 'h-16'
+              logExpanded ? 'h-64 sm:h-96' : 'h-12 sm:h-14'
             }`}
           >
             <button
               onClick={() => setLogExpanded(!logExpanded)}
-              className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-800/50 transition-colors"
+              className="w-full flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 hover:bg-gray-800/50 transition-colors"
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-sm font-medium text-gray-300">
-                  Connection Log
-                </span>
-                <span className="text-xs text-gray-600 font-mono">
-                  ({connectionLog.length})
-                </span>
+                <span className="text-xs sm:text-sm font-medium text-gray-300">Connection Log</span>
+                <span className="text-[10px] sm:text-xs text-gray-600 font-mono">({connectionLog.length})</span>
               </div>
-              <svg
-                className={`w-5 h-5 text-gray-400 transition-transform ${
-                  logExpanded ? 'rotate-180' : ''
-                }`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
+              <svg className={`w-4 h-4 sm:w-5 sm:h-5 text-gray-400 transition-transform ${logExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </button>
             {logExpanded && (
@@ -1045,19 +1031,6 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-
-      <style jsx>{`
-        .scrollbar-thin::-webkit-scrollbar {
-          height: 4px;
-        }
-        .scrollbar-thin::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .scrollbar-thin::-webkit-scrollbar-thumb {
-          background: #333;
-          border-radius: 2px;
-        }
-      `}</style>
     </div>
   );
 }
