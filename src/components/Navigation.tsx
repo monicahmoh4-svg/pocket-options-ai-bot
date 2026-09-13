@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/router'
+import { usePathname } from 'next/navigation'
 
 interface NavigationProps {
   botActive: boolean
@@ -12,7 +12,7 @@ interface NavigationProps {
 }
 
 const navLinks = [
-  { name: 'Dashboard', path: '/', icon: '📊' },
+  { name: 'Dashboard', path: '/dashboard', icon: '📊' },
   { name: 'Signals', path: '/signals', icon: '📡' },
   { name: 'Markets', path: '/markets', icon: '📈' },
   { name: 'Trades', path: '/trades', icon: '💹' },
@@ -25,7 +25,7 @@ export default function Navigation({
   isDemo,
   onToggleDemo,
 }: NavigationProps) {
-  const router = useRouter()
+  const pathname = usePathname()
   const [isExpanded, setIsExpanded] = useState(true)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
@@ -43,7 +43,6 @@ export default function Navigation({
 
   return (
     <>
-      {/* Mobile Hamburger Button */}
       <button
         onClick={toggleMobileMenu}
         className="fixed top-4 left-4 z-50 p-2 bg-gray-800 rounded-lg lg:hidden hover:bg-gray-700 transition-colors"
@@ -73,7 +72,6 @@ export default function Navigation({
         </svg>
       </button>
 
-      {/* Mobile Overlay */}
       {isMobileMenuOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-30 lg:hidden"
@@ -81,14 +79,12 @@ export default function Navigation({
         />
       )}
 
-      {/* Sidebar */}
       <aside
         className={`fixed top-0 left-0 h-full bg-gray-900 border-r border-gray-800 z-40 transition-all duration-300 ease-in-out ${
           isExpanded ? 'w-64' : 'w-20'
         } ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
         <div className="flex flex-col h-full">
-          {/* Logo Section */}
           <div className="flex items-center justify-between p-4 border-b border-gray-800">
             <div className="flex items-center gap-3">
               <span className="text-2xl">🤖</span>
@@ -119,7 +115,6 @@ export default function Navigation({
             </button>
           </div>
 
-          {/* Status Indicators */}
           <div className={`p-4 border-b border-gray-800 ${!isExpanded ? 'px-2' : ''}`}>
             {isExpanded ? (
               <div className="space-y-3">
@@ -176,10 +171,9 @@ export default function Navigation({
             )}
           </div>
 
-          {/* Navigation Links */}
           <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
             {navLinks.map((link) => {
-              const isActive = router.pathname === link.path
+              const isActive = pathname === link.path || (link.path === '/dashboard' && pathname === '/')
               return (
                 <Link
                   key={link.path}
@@ -201,7 +195,6 @@ export default function Navigation({
             })}
           </nav>
 
-          {/* Account Toggle */}
           <div className={`p-4 border-t border-gray-800 ${!isExpanded ? 'px-2' : ''}`}>
             {isExpanded ? (
               <div className="bg-gray-800 rounded-lg p-4">

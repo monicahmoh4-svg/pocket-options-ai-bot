@@ -1,3 +1,5 @@
+import { TradingRules } from '../types';
+
 export const DEFAULT_TRADING_RULES: TradingRules = {
   maxStake: 100,
   minStake: 1,
