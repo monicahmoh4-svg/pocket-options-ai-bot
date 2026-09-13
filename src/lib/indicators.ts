@@ -362,7 +362,7 @@ export function calculateTrendMomentum(candles: CandleData[]): IndicatorResult {
   let plusDM = plusDMList.slice(0, period).reduce((a, b) => a + b, 0) / period;
   let minusDM = minusDMList.slice(0, period).reduce((a, b) => a + b, 0) / period;
 
-  const dxValues: number[] = [];
+  const dxValues: { dx: number; plusDI: number; minusDI: number }[] = [];
   for (let i = period; i < trList.length; i++) {
     atr = (atr * (period - 1) + trList[i]) / period;
     plusDM = (plusDM * (period - 1) + plusDMList[i]) / period;
@@ -383,7 +383,7 @@ export function calculateTrendMomentum(candles: CandleData[]): IndicatorResult {
     adx = adxSum / period;
   }
 
-  const lastDI = dxValues[dxValues.length - 1];
+  const lastDI = dxValues[dxValues.length - 1] || { dx: 0, plusDI: 0, minusDI: 0 };
   const isTrendStrong = adx > 25;
 
   let signal: 'CALL' | 'PUT' | 'NEUTRAL' = 'NEUTRAL';
