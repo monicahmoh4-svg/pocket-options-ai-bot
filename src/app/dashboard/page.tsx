@@ -118,6 +118,7 @@ export default function DashboardPage() {
   const [logExpanded, setLogExpanded] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(true);
   const [mounted, setMounted] = useState(false);
+  const [now, setNow] = useState<Date | null>(null);
 
   const wsRef = useRef<PocketOptionsWebSocket | null>(null);
   const clientRef = useRef<PocketOptionsClient | null>(null);
@@ -137,6 +138,13 @@ export default function DashboardPage() {
   const autoTradeIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => { setMounted(true); }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    setNow(new Date());
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, [mounted]);
 
   useEffect(() => { isScanningRef.current = isScanning; }, [isScanning]);
   useEffect(() => { signalsRef.current = signals; }, [signals]);
@@ -650,7 +658,47 @@ export default function DashboardPage() {
 
       <div className="lg:ml-16 xl:ml-60 min-h-screen">
         <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 max-w-7xl mx-auto">
-          <div className="mb-4 sm:mb-6">
+          {/* ── greeting header ── */}
+          <div className="relative overflow-hidden rounded-3xl border border-emerald-500/15 bg-gradient-to-br from-emerald-500/[0.08] via-transparent to-transparent p-5 sm:p-6 mb-4 sm:mb-5">
+            <div className="absolute -top-20 right-10 w-72 h-72 bg-emerald-500/10 rounded-full blur-[80px] pointer-events-none" />
+            <div className="relative flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <p className="text-[11px] font-bold tracking-[0.2em] text-emerald-400/80 uppercase">
+                  {now ? now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }) : '—'}
+                  {now ? ` · ${now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}` : ''}
+                </p>
+                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight mt-1">
+                  {(() => {
+                    const h = now ? now.getHours() : 12;
+                    if (h < 12) return 'Good morning, trader ☀️';
+                    if (h < 18) return 'Good afternoon, trader 🌤️';
+                    return 'Good evening, trader 🌙';
+                  })()}
+                </h1>
+                <p className="text-sm text-gray-400 mt-1">
+                  {botState.isActive
+                    ? `Bot is scanning ${selectedMarkets.length || assets.length} markets · ${signals.length} live signals`
+                    : 'Bot is paused — toggle it on to start auto-trading'}
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border ${botState.isActive ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30' : 'bg-white/5 text-gray-400 border-white/10'}`}>
+                  <span className={`w-2 h-2 rounded-full ${botState.isActive ? 'bg-emerald-400 animate-pulse' : 'bg-gray-500'}`} />
+                  {botState.isActive ? 'BOT LIVE' : 'BOT PAUSED'}
+                </span>
+                <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border ${botState.isConnected ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30' : 'bg-yellow-500/10 text-yellow-300 border-yellow-500/30'}`}>
+                  <span className={`w-2 h-2 rounded-full ${botState.isConnected ? 'bg-emerald-400' : 'bg-yellow-400 animate-pulse'}`} />
+                  {botState.isConnected ? 'CONNECTED' : 'CONNECTING'}
+                </span>
+                <span className={`text-xs font-bold px-3 py-1.5 rounded-full border ${isDemoMode ? 'bg-yellow-500/10 text-yellow-300 border-yellow-500/30' : 'bg-red-500/10 text-red-300 border-red-500/30'}`}>
+                  {isDemoMode ? 'DEMO · $10K' : 'REAL MONEY'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* ── balance card ── */}
+          <div className="rounded-3xl border border-white/[0.07] bg-white/[0.02] backdrop-blur p-4 sm:p-5 mb-4 sm:mb-5 hover:border-emerald-500/20 transition-colors">
             <BalanceDisplay
               balance={botState.balance}
               todayProfit={botState.todayProfit}
@@ -661,36 +709,62 @@ export default function DashboardPage() {
             />
           </div>
 
-          <div className="flex items-center gap-2 mb-4 sm:mb-6 overflow-x-auto pb-2 scrollbar-thin">
-            {TABS.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-200 ${
-                  activeTab === tab.key
-                    ? 'bg-gradient-to-r from-emerald-600/20 to-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-lg shadow-emerald-500/10'
-                    : 'bg-gray-900/50 text-gray-400 hover:bg-gray-800/50 hover:text-white border border-transparent'
-                }`}
-              >
-                <span>{tab.icon}</span>
-                <span>{tab.label}</span>
-                {tab.key === 'signals' && signals.length > 0 && (
-                  <span className="w-5 h-5 flex items-center justify-center text-[10px] font-bold bg-emerald-500 text-white rounded-full">
-                    {signals.length > 9 ? '9+' : signals.length}
-                  </span>
-                )}
-                {tab.key === 'trades' && activeTrades.length > 0 && (
-                  <span className="w-5 h-5 flex items-center justify-center text-[10px] font-bold bg-emerald-500 text-white rounded-full animate-pulse">
-                    {activeTrades.length}
-                  </span>
-                )}
-              </button>
-            ))}
+          {/* ── sticky tab bar ── */}
+          <div className="sticky top-0 z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-2 bg-[#080c0a]/85 backdrop-blur-xl">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
+              {TABS.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`group flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-semibold whitespace-nowrap transition-all duration-200 active:scale-95 ${
+                    activeTab === tab.key
+                      ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white border border-emerald-400/40 shadow-lg shadow-emerald-500/25'
+                      : 'bg-white/[0.03] text-gray-400 hover:bg-white/[0.07] hover:text-white border border-white/[0.06]'
+                  }`}
+                >
+                  <span className="group-hover:scale-110 transition-transform">{tab.icon}</span>
+                  <span>{tab.label}</span>
+                  {tab.key === 'signals' && signals.length > 0 && (
+                    <span className={`min-w-5 h-5 px-1 flex items-center justify-center text-[10px] font-bold rounded-full ${activeTab === tab.key ? 'bg-white text-emerald-600' : 'bg-emerald-500 text-white'}`}>
+                      {signals.length > 9 ? '9+' : signals.length}
+                    </span>
+                  )}
+                  {tab.key === 'trades' && activeTrades.length > 0 && (
+                    <span className={`min-w-5 h-5 px-1 flex items-center justify-center text-[10px] font-bold rounded-full animate-pulse ${activeTab === tab.key ? 'bg-white text-emerald-600' : 'bg-emerald-500 text-white'}`}>
+                      {activeTrades.length}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
 
           {activeTab === 'overview' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            <div className="animate-fade-in-up">
+              {/* quick stat strip */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 sm:mb-6">
+                {[
+                  { label: 'Live signals', value: String(signals.length), accent: 'text-emerald-300', dot: 'bg-emerald-400' },
+                  { label: 'Open trades', value: String(activeTrades.length), accent: 'text-cyan-300', dot: 'bg-cyan-400' },
+                  { label: 'Markets scanned', value: String(marketScans.length), accent: 'text-teal-300', dot: 'bg-teal-400' },
+                  { label: 'Win rate', value: `${botState.winRate.toFixed(0)}%`, accent: botState.winRate >= 50 ? 'text-emerald-300' : 'text-red-300', dot: botState.winRate >= 50 ? 'bg-emerald-400' : 'bg-red-400' },
+                ].map((s) => (
+                  <div key={s.label} className="rounded-2xl border border-white/[0.07] bg-white/[0.02] px-4 py-3.5 hover:border-emerald-500/25 hover:bg-emerald-500/[0.04] transition-all group">
+                    <div className="flex items-center gap-1.5">
+                      <span className={`w-1.5 h-1.5 rounded-full ${s.dot} ${s.label === 'Live signals' ? 'animate-pulse' : ''}`} />
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">{s.label}</p>
+                    </div>
+                    <p className={`text-2xl font-extrabold tabular-nums mt-1 ${s.accent} group-hover:scale-105 origin-left transition-transform`}>{s.value}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               <div className="space-y-4 sm:space-y-6">
+                <div>
+                  <div className="flex items-center gap-2 mb-2.5">
+                    <span className="w-6 h-6 rounded-lg bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center text-xs">🤖</span>
+                    <h2 className="text-sm font-bold tracking-wide">BOT CONTROL</h2>
+                  </div>
                 <BotControls
                   botActive={botState.isActive}
                   isConnected={botState.isConnected}
@@ -703,16 +777,50 @@ export default function DashboardPage() {
                   onCloseAllTrades={handleCloseAllTrades}
                   onScanMarkets={handleScanMarkets}
                 />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-2.5">
+                    <span className="w-6 h-6 rounded-lg bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center text-xs">💹</span>
+                    <h2 className="text-sm font-bold tracking-wide">EQUITY CURVE</h2>
+                  </div>
                 <ProfitChart chartData={chartPoints} tradeHistory={tradeHistory} currentBalance={botState.balance} />
+                </div>
               </div>
               <div className="space-y-4 sm:space-y-6">
-                <MarketScanner
-                  scans={marketScans}
-                  isScanning={isScanning}
-                  lastScanTime={lastScanTime}
-                  onSelectMarket={(assetId) => { if (!selectedMarkets.includes(assetId)) { setSelectedMarkets([...selectedMarkets, assetId]); } }}
-                />
-                <SignalPanel signals={signals.slice(0, 5)} onExecuteTrade={handleExecuteTrade} isExecuting={isExecutingTrade} />
+                <div>
+                  <div className="flex items-center justify-between mb-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="w-6 h-6 rounded-lg bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center text-xs">📈</span>
+                      <h2 className="text-sm font-bold tracking-wide">MARKET SCANNER</h2>
+                    </div>
+                    {isScanning && (
+                      <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-300">
+                        <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        Scanning…
+                      </span>
+                    )}
+                  </div>
+                  <MarketScanner
+                    scans={marketScans}
+                    isScanning={isScanning}
+                    lastScanTime={lastScanTime}
+                    onSelectMarket={(assetId) => { if (!selectedMarkets.includes(assetId)) { setSelectedMarkets([...selectedMarkets, assetId]); } }}
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-2.5">
+                    <span className="w-6 h-6 rounded-lg bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center text-xs">📡</span>
+                    <h2 className="text-sm font-bold tracking-wide">TOP SIGNALS</h2>
+                    <button onClick={() => setActiveTab('signals')} className="ml-auto text-[11px] font-semibold text-emerald-400 hover:text-emerald-300 transition-colors">
+                      View all →
+                    </button>
+                  </div>
+                  <SignalPanel signals={signals.slice(0, 5)} onExecuteTrade={handleExecuteTrade} isExecuting={isExecutingTrade} />
+                </div>
+              </div>
               </div>
             </div>
           )}
@@ -756,20 +864,26 @@ export default function DashboardPage() {
             </div>
           )}
 
-          <div className="mt-4 sm:mt-6">
-            <div className={`card-dark overflow-hidden transition-all duration-300 ${logExpanded ? 'h-64 sm:h-96' : 'h-14'}`}>
+          <div className="mt-4 sm:mt-6 pb-6">
+            <div className={`rounded-3xl border border-white/[0.07] bg-white/[0.02] overflow-hidden transition-all duration-300 ${logExpanded ? 'h-64 sm:h-96 border-emerald-500/20' : 'h-14 hover:border-white/15'}`}>
               <button
                 onClick={() => setLogExpanded(!logExpanded)}
-                className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-800/30 transition-colors"
+                className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/[0.03] transition-colors"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-sm font-medium text-gray-300">Connection Log</span>
-                  <span className="text-xs text-gray-600 font-mono">({connectionLog.length})</span>
+                  <span className="text-sm font-semibold text-gray-200">Live Activity</span>
+                  <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-300">({connectionLog.length})</span>
+                  {!logExpanded && connectionLog.length > 0 && (
+                    <span className="hidden sm:block text-xs text-gray-500 truncate max-w-md">{connectionLog[connectionLog.length - 1]?.message}</span>
+                  )}
                 </div>
-                <svg className={`w-5 h-5 text-gray-400 transition-transform ${logExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
+                <span className="flex items-center gap-2">
+                  <span className="text-[11px] font-semibold text-gray-500">{logExpanded ? 'Collapse' : 'Expand'}</span>
+                  <svg className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${logExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </span>
               </button>
               {logExpanded && (
                 <div className="h-[calc(100%-3.5rem)]">
